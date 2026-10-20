@@ -6,6 +6,7 @@ import { beginText, commitTextEdit, editText } from './commands';
 import { STROKE_WIDTHS } from './constants';
 import {
   boundsFromPoints,
+  circleFromCenter,
   clamp01,
   clampDelta,
   constrainLine,
@@ -14,12 +15,24 @@ import {
   isTooSmall,
   moveLineEnd,
   resizeBounds,
+  resizeCircle,
   simplifyPath,
   translateAnnotation,
 } from './geometry';
 import { useInteractionStore } from './interactionStore';
 import { useToolStore } from './toolStore';
-import type { Annotation, Bounds, BoxAnnotation, BoxHandle, DrawTool, HandleId, LineAnnotation, LineHandle, Point } from './types';
+import type {
+  Annotation,
+  Bounds,
+  BoxAnnotation,
+  BoxHandle,
+  DrawTool,
+  HandleId,
+  LineAnnotation,
+  LineHandle,
+  Point,
+  StrokeStyle,
+} from './types';
 
 /** Pointer travel (CSS px) before a press on an annotation becomes a move. */
 const MOVE_THRESHOLD = 3;
@@ -41,6 +54,7 @@ interface DrawGesture extends GestureBase {
   id: string;
   color: string;
   strokeWidth: number;
+  dash: StrokeStyle;
   anchorTime: number;
   /** Freehand samples, appended in place while the pointer moves. */
   points: number[];
@@ -89,24 +103,27 @@ function resolve(gesture: Gesture, aspect: number): Annotation {
       const point = shiftKey ? constrainLine(fixed, current, aspect) : current;
       return moveLineEnd(original, handle as LineHandle, point);
     }
+    if (original.type === 'ellipse') return { ...original, ...resizeCircle(original, current, aspect) };
     return { ...original, ...resizeBounds(original, handle as BoxHandle, current) };
   }
 
   const base = { id: gesture.id, color: gesture.color, anchorTime: gesture.anchorTime, range: null };
-  const { start, strokeWidth } = gesture;
+  const { start, strokeWidth, dash } = gesture;
   switch (gesture.tool) {
     case 'path':
-      return { ...base, type: 'path', points: gesture.points, strokeWidth };
+      return { ...base, type: 'path', points: gesture.points, strokeWidth, dash };
     case 'line':
     case 'arrow': {
       const end = shiftKey ? constrainLine(start, current, aspect) : current;
-      return { ...base, type: gesture.tool, x1: start.x, y1: start.y, x2: end.x, y2: end.y, strokeWidth };
+      return { ...base, type: gesture.tool, x1: start.x, y1: start.y, x2: end.x, y2: end.y, strokeWidth, dash };
     }
-    case 'rect':
-    case 'ellipse': {
+    case 'rect': {
       const end = shiftKey ? constrainSquare(start, current, aspect) : current;
-      return { ...base, type: gesture.tool, ...boundsFromPoints(start, end), strokeWidth };
+      return { ...base, type: 'rect', ...boundsFromPoints(start, end), strokeWidth, dash };
     }
+    case 'ellipse':
+      // Always a circle, drawn from its centre: press on the player, drag outwards.
+      return { ...base, type: 'ellipse', ...circleFromCenter(start, current, aspect), strokeWidth, dash };
   }
 }
 
@@ -196,7 +213,7 @@ export function useOverlayPointer(svgRef: RefObject<SVGSVGElement | null>, aspec
       const rect = svg.getBoundingClientRect();
       const point = toPoint(event.clientX, event.clientY, rect);
       const base: GestureBase = { pointerId: event.pointerId, rect, current: point, shiftKey: event.shiftKey };
-      const { tool, color, sizeIndex } = useToolStore.getState();
+      const { tool, color, sizeIndex, dash } = useToolStore.getState();
       const annotations = useAnnotationStore.getState();
 
       if (tool === 'text') {
@@ -244,6 +261,7 @@ export function useOverlayPointer(svgRef: RefObject<SVGSVGElement | null>, aspec
         id: createId(),
         color,
         strokeWidth: STROKE_WIDTHS[sizeIndex]!,
+        dash,
         anchorTime: player.time,
         points: [point.x, point.y],
         lastSample: { x: event.clientX, y: event.clientY },

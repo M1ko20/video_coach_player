@@ -1,8 +1,21 @@
 # Coach Video Analysis
 
 A video analysis workspace for coaches: open a match video, pause on the exact
-moment, draw over it, step through frame by frame, and come back to the
-analysis later. Everything runs in the browser; no video is uploaded anywhere.
+moment, draw over it, step through frame by frame, record a voiced-over
+analysis to send to players, and come back to it later. Everything runs in the
+browser; no video is uploaded anywhere.
+
+- **Frame strip** under the video shows the neighbouring frames like a piece of
+  film. Drag it sideways to move frame by frame, click a frame to jump to it, or
+  scroll over it (one notch = one frame). `S` shows or hides it.
+- **Drawing**: freehand, line, arrow, circle, rectangle and text, in eight
+  colours and four thicknesses. Lines, arrows, circles, rectangles and freehand
+  strokes can be solid, dashed or dotted. Circles are always round and are drawn
+  from the centre outwards.
+- **Record** (top bar) records the video with the drawings burnt in, the video's
+  sound (unless muted) and your voice from the microphone. Pause, step and draw
+  while recording; all of it is in the result. Stop gives a preview and a
+  download (MP4 where the browser can encode it, otherwise WebM).
 
 ## Run it
 
@@ -28,7 +41,8 @@ stores, icons are from `lucide-react`; there is no UI kit, CSS framework or canv
 ```
 src/
   annotations/   drawing model, tools, SVG overlay, selection, undo history
-  video/         player controller, stage, timeline, transport, frame-rate measurement
+  video/         player controller, stage, timeline, frame strip, transport, frame-rate measurement
+  recording/     recording the analysis: canvas compositing, audio mixing, download
   project/       IndexedDB storage, open/save/close lifecycle, library screen
   workspace/     workspace layout, top bar, keyboard shortcuts, banners
   ui/            shared controls (buttons, dialogs, drop handling)
@@ -52,6 +66,21 @@ Design decisions worth knowing before changing things:
   scrubbing cause zero React renders (there is a test for this).
 - **Seeks are coalesced.** While the decoder is busy only the latest requested
   position is kept, so dragging the playhead stays responsive on heavy files.
+- **The frame strip follows the playhead the same way.** Each slot is a canvas
+  repainted from a thumbnail cache when the frame changes. Thumbnails come from
+  a second, hidden `<video>` on the same file (so making them never moves the
+  main picture), decoded only once the playhead is still, nearest frames first;
+  frames the main video is already showing are copied from it for free.
+- **Recording composes the picture on a canvas** every display frame: the video
+  frame, then the drawings through `recording/drawAnnotations.ts`, a canvas
+  port of `ShapeView`. Keep the two in step when changing how shapes look.
+  Sound is mixed in Web Audio; the video element's output is routed through it
+  permanently once the first recording starts, as browsers allow only one such
+  routing per element. The microphone goes only into the recording, never to
+  the speakers.
+- **Circles are stored as `type: 'ellipse'`** with a bounding box that is square
+  on screen, so analyses saved before circles were enforced still load.
+  Drawings saved before line styles existed have no `dash` and are solid.
 - **Every annotation has `anchorTime` and `range`.** `range` is `null` today
   (visible for the whole video); `isVisibleAt` already implements time-limited
   visibility for when the UI offers it.
@@ -88,3 +117,8 @@ has completed.
   backup yet, and clearing site data deletes the analyses.
 - Drawings are visible for the whole video; freehand strokes and text can be
   moved and restyled but not scaled with handles.
+- **Recording needs the tab to stay visible.** Browsers stop painting hidden
+  tabs, so switching away freezes the picture in the recording (the sound keeps
+  going). Recordings are kept in memory until downloaded or discarded; they are
+  not saved with the analysis. WebM files from Chrome's recorder may not be
+  seekable in every player; Chrome normally records MP4.

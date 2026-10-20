@@ -1,4 +1,4 @@
-import type { Tool } from './types';
+import type { StrokeStyle, Tool } from './types';
 
 /** Height of the overlay's coordinate space. One unit = 1/1000 of the video height. */
 export const REF_HEIGHT = 1000;
@@ -29,6 +29,12 @@ export const FONT_SIZES: readonly number[] = [26, 38, 54, 76];
 export const SIZE_LABELS: readonly string[] = ['Thin', 'Medium', 'Thick', 'Extra thick'];
 export const TEXT_SIZE_LABELS: readonly string[] = ['Small', 'Medium', 'Large', 'Extra large'];
 export const DEFAULT_SIZE_INDEX = 1;
+
+export const STROKE_STYLES: ReadonlyArray<{ value: StrokeStyle; label: string }> = [
+  { value: 'solid', label: 'Solid' },
+  { value: 'dashed', label: 'Dashed' },
+  { value: 'dotted', label: 'Dotted' },
+];
 
 export interface ToolOption {
   tool: Tool;

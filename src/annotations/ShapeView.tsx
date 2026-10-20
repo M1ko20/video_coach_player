@@ -1,7 +1,8 @@
 import { memo } from 'react';
 import { TEXT_FONT_FAMILY, TEXT_FONT_WEIGHT, measureTextBlock } from '../lib/textMetrics';
 import { REF_HEIGHT } from './constants';
-import { arrowGeometry, pathData } from './geometry';
+import { arrowGeometry, dashPattern, pathData } from './geometry';
+import { haloFor } from './halo';
 import type { Annotation } from './types';
 
 interface ShapeViewProps {
@@ -12,14 +13,6 @@ interface ShapeViewProps {
 
 /** Extra width of the invisible stroke that makes thin shapes easy to click. */
 const HIT_PADDING = 18;
-
-/** A contrasting outline keeps drawings readable on any footage. */
-function haloFor(color: string, strength: number): string {
-  const value = parseInt(color.slice(1), 16);
-  const luminance =
-    (0.2126 * ((value >> 16) & 255) + 0.7152 * ((value >> 8) & 255) + 0.0722 * (value & 255)) / 255;
-  return luminance < 0.25 ? `rgba(255,255,255,${strength})` : `rgba(0,0,0,${strength})`;
-}
 
 /**
  * Renders one annotation in overlay units. Memoised on the annotation object:
@@ -63,13 +56,16 @@ export const ShapeView = memo(function ShapeView({ annotation: a, width: W }: Sh
   const halo = haloFor(a.color, 0.45);
   const haloWidth = a.strokeWidth + 3;
   const hitWidth = a.strokeWidth + HIT_PADDING;
+  // The halo shares the ink's pattern so every dash keeps its outline. The hit
+  // stroke stays solid: the gaps should still be clickable.
+  const dash = dashPattern(a.dash, a.strokeWidth)?.join(' ');
 
   if (a.type === 'path') {
     const d = pathData(a.points, W, H);
     return (
       <g data-id={a.id} className="shape">
-        <path className="shape__halo" d={d} stroke={halo} strokeWidth={haloWidth} />
-        <path className="shape__ink" d={d} stroke={a.color} strokeWidth={a.strokeWidth} />
+        <path className="shape__halo" d={d} stroke={halo} strokeWidth={haloWidth} strokeDasharray={dash} />
+        <path className="shape__ink" d={d} stroke={a.color} strokeWidth={a.strokeWidth} strokeDasharray={dash} />
         <path className="shape__hit" d={d} strokeWidth={hitWidth} />
       </g>
     );
@@ -85,9 +81,27 @@ export const ShapeView = memo(function ShapeView({ annotation: a, width: W }: Sh
     const endY = arrow ? arrow.shaftEnd.y : y2;
     return (
       <g data-id={a.id} className="shape">
-        <line className="shape__halo" x1={x1} y1={y1} x2={endX} y2={endY} stroke={halo} strokeWidth={haloWidth} />
+        <line
+          className="shape__halo"
+          x1={x1}
+          y1={y1}
+          x2={endX}
+          y2={endY}
+          stroke={halo}
+          strokeWidth={haloWidth}
+          strokeDasharray={dash}
+        />
         {arrow && <polygon className="shape__halo" points={arrow.head} stroke={halo} strokeWidth={3} />}
-        <line className="shape__ink" x1={x1} y1={y1} x2={endX} y2={endY} stroke={a.color} strokeWidth={a.strokeWidth} />
+        <line
+          className="shape__ink"
+          x1={x1}
+          y1={y1}
+          x2={endX}
+          y2={endY}
+          stroke={a.color}
+          strokeWidth={a.strokeWidth}
+          strokeDasharray={dash}
+        />
         {arrow && (
           <polygon className="shape__ink" points={arrow.head} style={{ fill: a.color }} stroke={a.color} strokeWidth={1.5} />
         )}
@@ -100,8 +114,8 @@ export const ShapeView = memo(function ShapeView({ annotation: a, width: W }: Sh
     const box = { x: a.x * W, y: a.y * H, width: a.w * W, height: a.h * H };
     return (
       <g data-id={a.id} className="shape">
-        <rect className="shape__halo" {...box} stroke={halo} strokeWidth={haloWidth} />
-        <rect className="shape__ink" {...box} stroke={a.color} strokeWidth={a.strokeWidth} />
+        <rect className="shape__halo" {...box} stroke={halo} strokeWidth={haloWidth} strokeDasharray={dash} />
+        <rect className="shape__ink" {...box} stroke={a.color} strokeWidth={a.strokeWidth} strokeDasharray={dash} />
         <rect className="shape__hit" {...box} strokeWidth={hitWidth} />
       </g>
     );
@@ -115,8 +129,8 @@ export const ShapeView = memo(function ShapeView({ annotation: a, width: W }: Sh
   };
   return (
     <g data-id={a.id} className="shape">
-      <ellipse className="shape__halo" {...ellipse} stroke={halo} strokeWidth={haloWidth} />
-      <ellipse className="shape__ink" {...ellipse} stroke={a.color} strokeWidth={a.strokeWidth} />
+      <ellipse className="shape__halo" {...ellipse} stroke={halo} strokeWidth={haloWidth} strokeDasharray={dash} />
+      <ellipse className="shape__ink" {...ellipse} stroke={a.color} strokeWidth={a.strokeWidth} strokeDasharray={dash} />
       <ellipse className="shape__hit" {...ellipse} strokeWidth={hitWidth} />
     </g>
   );

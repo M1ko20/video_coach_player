@@ -4,6 +4,7 @@ import { StyleOptions } from '../annotations/StyleOptions';
 import { useProjectStore } from '../project/projectStore';
 import { SaveIndicator } from '../project/SaveIndicator';
 import { goToLibrary, renameProject } from '../project/session';
+import { RecordButton } from '../recording/RecordButton';
 import { IconButton } from '../ui/IconButton';
 
 /** Project name, editable in place. Commits on Enter or when focus leaves; Escape reverts. */
@@ -65,6 +66,7 @@ export function TopBar({ onShowShortcuts, toolsDisabled }: TopBarProps) {
       </div>
 
       <div className="topbar__right">
+        <RecordButton disabled={toolsDisabled} />
         <SaveIndicator />
         <IconButton label="Keyboard shortcuts" shortcut="?" tooltipSide="left" onClick={onShowShortcuts}>
           <Keyboard size={18} />

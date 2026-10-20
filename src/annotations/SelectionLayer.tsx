@@ -29,6 +29,9 @@ const BOX_HANDLES: ReadonlyArray<{ id: BoxHandle; fx: number; fy: number; cursor
   { id: 'w', fx: 0, fy: 0.5, cursor: 'ew-resize' },
 ];
 
+/** A circle only changes its radius, so one handle per side is enough. */
+const CIRCLE_HANDLES = BOX_HANDLES.filter((handle) => handle.id.length === 1);
+
 const HANDLE_SIZE = 9;
 const HANDLE_HIT_RADIUS = 12;
 const OUTLINE_PADDING = 6;
@@ -43,7 +46,7 @@ function handlesFor(annotation: Annotation, W: number, H: number): Handle[] {
       ];
     case 'rect':
     case 'ellipse':
-      return BOX_HANDLES.map(({ id, fx, fy, cursor }) => ({
+      return (annotation.type === 'ellipse' ? CIRCLE_HANDLES : BOX_HANDLES).map(({ id, fx, fy, cursor }) => ({
         id,
         x: (annotation.x + annotation.w * fx) * W,
         y: (annotation.y + annotation.h * fy) * H,

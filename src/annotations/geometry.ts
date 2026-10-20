@@ -1,6 +1,6 @@
 import { measureTextBlock } from '../lib/textMetrics';
 import { MIN_SHAPE_SIZE, REF_HEIGHT } from './constants';
-import type { Annotation, Bounds, BoxHandle, LineAnnotation, LineHandle, Point } from './types';
+import type { Annotation, Bounds, BoxHandle, LineAnnotation, LineHandle, Point, StrokeStyle } from './types';
 
 export function clamp(value: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, value));
@@ -96,9 +96,27 @@ export function simplifyPath(points: readonly number[], aspect: number, toleranc
   return result;
 }
 
+/**
+ * Dash pattern for a stroke style, scaled with the stroke width so dashes look
+ * the same at every thickness. `null` means a solid stroke. Dots are zero-length
+ * dashes made round by the round line cap.
+ */
+export function dashPattern(style: StrokeStyle | undefined, strokeWidth: number): number[] | null {
+  switch (style) {
+    case 'dashed':
+      return [strokeWidth * 3, strokeWidth * 2.2];
+    case 'dotted':
+      return [0, strokeWidth * 2];
+    default:
+      return null;
+  }
+}
+
 export interface ArrowGeometry {
   /** Where the shaft stops, slightly inside the head so the two overlap. */
   shaftEnd: Point;
+  /** Corners of the arrowhead: tip first. Empty for a zero-length arrow. */
+  headPoints: Point[];
   /** `points` attribute of the arrowhead polygon. */
   head: string;
 }
@@ -108,7 +126,7 @@ export function arrowGeometry(x1: number, y1: number, x2: number, y2: number, st
   const dx = x2 - x1;
   const dy = y2 - y1;
   const length = Math.hypot(dx, dy);
-  if (length < 0.001) return { shaftEnd: { x: x2, y: y2 }, head: '' };
+  if (length < 0.001) return { shaftEnd: { x: x2, y: y2 }, headPoints: [], head: '' };
 
   const ux = dx / length;
   const uy = dy / length;
@@ -117,17 +135,16 @@ export function arrowGeometry(x1: number, y1: number, x2: number, y2: number, st
   const baseX = x2 - ux * headLength;
   const baseY = y2 - uy * headLength;
 
-  const head = [
-    [x2, y2],
-    [baseX - uy * halfWidth, baseY + ux * halfWidth],
-    [baseX + uy * halfWidth, baseY - ux * halfWidth],
-  ]
-    .map(([x, y]) => `${round1(x!)},${round1(y!)}`)
-    .join(' ');
+  const headPoints = [
+    { x: x2, y: y2 },
+    { x: baseX - uy * halfWidth, y: baseY + ux * halfWidth },
+    { x: baseX + uy * halfWidth, y: baseY - ux * halfWidth },
+  ];
 
   return {
     shaftEnd: { x: x2 - ux * headLength * 0.8, y: y2 - uy * headLength * 0.8 },
-    head,
+    headPoints,
+    head: headPoints.map(({ x, y }) => `${round1(x)},${round1(y)}`).join(' '),
   };
 }
 
@@ -242,6 +259,36 @@ export function constrainLine(from: Point, to: Point, aspect: number): Point {
     x: clamp01(from.x + (Math.cos(angle) * length) / aspect),
     y: clamp01(from.y + Math.sin(angle) * length),
   };
+}
+
+/**
+ * Bounding box of a circle around `center` with radius `radius` (a fraction of
+ * the video height). The circle is kept inside the frame by moving its centre
+ * inwards rather than shrinking it, so a player near the edge can still be
+ * circled at a useful size.
+ */
+export function circleBounds(center: Point, radius: number, aspect: number): Bounds {
+  const r = Math.min(radius, 0.5, aspect / 2);
+  const rx = r / aspect;
+  const cx = clamp(center.x, rx, 1 - rx);
+  const cy = clamp(center.y, r, 1 - r);
+  return { x: cx - rx, y: cy - r, w: rx * 2, h: r * 2 };
+}
+
+/** Distance between two points on screen, as a fraction of the video height. */
+function screenDistance(a: Point, b: Point, aspect: number): number {
+  return Math.hypot((b.x - a.x) * aspect, b.y - a.y);
+}
+
+/** A circle drawn from its centre outwards: `edge` is a point on its outline. */
+export function circleFromCenter(center: Point, edge: Point, aspect: number): Bounds {
+  return circleBounds(center, screenDistance(center, edge, aspect), aspect);
+}
+
+/** Resizes a circle about its centre so that its outline passes through `point`. */
+export function resizeCircle(original: Bounds, point: Point, aspect: number): Bounds {
+  const center = { x: original.x + original.w / 2, y: original.y + original.h / 2 };
+  return circleFromCenter(center, point, aspect);
 }
 
 /** Snaps `to` so the box from `from` is square on screen, without leaving the frame. */

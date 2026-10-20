@@ -2,6 +2,7 @@ import { LoaderCircle } from 'lucide-react';
 import { useEffect } from 'react';
 import { Library } from './project/Library';
 import { useProjectStore } from './project/projectStore';
+import { RecordingDialog } from './recording/RecordingDialog';
 import { Workspace } from './workspace/Workspace';
 
 /** Stops the browser from navigating away when a file is dropped outside a drop target. */
@@ -33,6 +34,11 @@ export function App() {
     );
   }
 
-  // Keyed by project so no component state leaks from one analysis into the next.
-  return projectId ? <Workspace key={projectId} /> : <Library />;
+  return (
+    <>
+      {/* Keyed by project so no component state leaks from one analysis into the next. */}
+      {projectId ? <Workspace key={projectId} /> : <Library />}
+      <RecordingDialog />
+    </>
+  );
 }

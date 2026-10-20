@@ -1,6 +1,6 @@
 import { create } from 'zustand';
-import { COLORS, DEFAULT_COLOR, DEFAULT_SIZE_INDEX, STROKE_WIDTHS, TOOLS } from './constants';
-import type { Tool } from './types';
+import { COLORS, DEFAULT_COLOR, DEFAULT_SIZE_INDEX, STROKE_STYLES, STROKE_WIDTHS, TOOLS } from './constants';
+import type { StrokeStyle, Tool } from './types';
 
 const STORAGE_KEY = 'cva:tool-settings';
 
@@ -8,17 +8,19 @@ interface ToolSettings {
   tool: Tool;
   color: string;
   sizeIndex: number;
+  dash: StrokeStyle;
 }
 
 interface ToolState extends ToolSettings {
   setTool: (tool: Tool) => void;
   setColor: (color: string) => void;
   setSizeIndex: (index: number) => void;
+  setDash: (dash: StrokeStyle) => void;
 }
 
 /** Tool preferences are a convenience, so a failed read or write is ignored. */
 function readSettings(): ToolSettings {
-  const defaults: ToolSettings = { tool: 'select', color: DEFAULT_COLOR, sizeIndex: DEFAULT_SIZE_INDEX };
+  const defaults: ToolSettings = { tool: 'select', color: DEFAULT_COLOR, sizeIndex: DEFAULT_SIZE_INDEX, dash: 'solid' };
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return defaults;
@@ -30,15 +32,16 @@ function readSettings(): ToolSettings {
         Number.isInteger(saved.sizeIndex) && saved.sizeIndex! >= 0 && saved.sizeIndex! < STROKE_WIDTHS.length
           ? saved.sizeIndex!
           : defaults.sizeIndex,
+      dash: STROKE_STYLES.some((option) => option.value === saved.dash) ? saved.dash! : defaults.dash,
     };
   } catch {
     return defaults;
   }
 }
 
-function writeSettings({ tool, color, sizeIndex }: ToolSettings) {
+function writeSettings({ tool, color, sizeIndex, dash }: ToolSettings) {
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify({ tool, color, sizeIndex }));
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ tool, color, sizeIndex, dash }));
   } catch {
     // Storage unavailable (private mode, quota): keep working with in-memory settings.
   }
@@ -54,5 +57,6 @@ export const useToolStore = create<ToolState>((set, get) => {
     setTool: (tool) => update({ tool }),
     setColor: (color) => update({ color }),
     setSizeIndex: (sizeIndex) => update({ sizeIndex }),
+    setDash: (dash) => update({ dash }),
   };
 });

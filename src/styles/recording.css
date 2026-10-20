@@ -1,0 +1,106 @@
+/* ---- Record button ------------------------------------------------------- */
+
+.record-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  height: 30px;
+  padding: 0 11px 0 10px;
+  border: 1px solid var(--border-strong);
+  border-radius: 15px;
+  background: var(--surface-2);
+  color: var(--text);
+  font-size: 12.5px;
+  font-weight: 600;
+  white-space: nowrap;
+  transition: background 0.12s var(--ease);
+}
+
+.record-button:hover:not(:disabled) {
+  background: var(--surface-3);
+}
+
+.record-button:disabled {
+  opacity: 0.4;
+}
+
+.record-button__dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--danger);
+}
+
+.record-button.is-recording {
+  border-color: transparent;
+  background: var(--danger);
+  color: #1c0706;
+}
+
+.record-button.is-recording:hover {
+  background: #ff7a72;
+}
+
+.record-button__stop {
+  width: 9px;
+  height: 9px;
+  border-radius: 2px;
+  background: currentColor;
+  animation: record-pulse 1.2s ease-in-out infinite;
+}
+
+.record-button__time {
+  min-width: 30px;
+  font-variant-numeric: tabular-nums;
+}
+
+@keyframes record-pulse {
+  50% {
+    opacity: 0.35;
+  }
+}
+
+/* ---- Finished recording -------------------------------------------------- */
+
+.dialog--recording {
+  width: min(640px, calc(100vw - 32px));
+}
+
+.recording__preview {
+  display: block;
+  width: 100%;
+  max-height: 56vh;
+  margin-top: 14px;
+  border-radius: var(--radius-m);
+  background: #000;
+}
+
+.recording__meta {
+  margin-top: 10px;
+  color: var(--text-muted);
+  font-size: 12.5px;
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+
+.recording__warning {
+  margin-top: 10px;
+  color: var(--warning);
+  font-size: 13px;
+}
+
+.dialog__actions a.button {
+  text-decoration: none;
+}
+
+@media (max-width: 760px) {
+  .record-button__label {
+    display: none;
+  }
+
+  .record-button:not(.is-recording) {
+    width: 30px;
+    padding: 0;
+    justify-content: center;
+  }
+}

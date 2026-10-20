@@ -40,12 +40,16 @@ export function lastFrameIndex(duration: number, fps: number): number {
   return Math.max(0, Math.ceil(duration * fps - 0.01) - 1);
 }
 
-/** Time to seek to in order to move `delta` frames away from `time`. */
-export function stepFrameTime(time: number, delta: number, fps: number, duration: number): number {
-  const last = lastFrameIndex(duration, fps);
-  const target = Math.min(last, Math.max(0, frameAtTime(time, fps) + delta));
+/** Seek target for a frame, clamped to the frames the video actually has. */
+export function frameSeekTime(frame: number, fps: number, duration: number): number {
+  const target = Math.min(lastFrameIndex(duration, fps), Math.max(0, frame));
   // Never seek to the very end: that puts the element in its "ended" state.
   return Math.max(0, Math.min(timeOfFrame(target, fps), duration - 0.001));
+}
+
+/** Time to seek to in order to move `delta` frames away from `time`. */
+export function stepFrameTime(time: number, delta: number, fps: number, duration: number): number {
+  return frameSeekTime(frameAtTime(time, fps) + delta, fps, duration);
 }
 
 /** Snaps a measured rate to a standard one when it is within 1.5%. */
@@ -113,5 +117,6 @@ export function formatBytes(bytes: number): string {
   const gb = bytes / 1024 ** 3;
   if (gb >= 1) return `${gb.toFixed(gb >= 10 ? 0 : 1)} GB`;
   const mb = bytes / 1024 ** 2;
+  if (mb < 0.1) return `${Math.max(1, Math.round(bytes / 1024))} KB`;
   return `${mb >= 10 ? Math.round(mb) : mb.toFixed(1)} MB`;
 }

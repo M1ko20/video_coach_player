@@ -128,6 +128,16 @@ class Player {
     return this.pendingSeek ?? this.el?.currentTime ?? 0;
   }
 
+  /** The bound element, for code that reads pictures or sound from it (thumbnails, recording). */
+  get element(): HTMLVideoElement | null {
+    return this.el;
+  }
+
+  /** True while the picture on screen may not match `time` yet. */
+  get isSeeking(): boolean {
+    return this.pendingSeek !== null || !!this.el?.seeking;
+  }
+
   get isPlaying(): boolean {
     const el = this.el;
     return !!el && !el.paused && !el.ended;

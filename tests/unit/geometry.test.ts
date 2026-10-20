@@ -2,13 +2,16 @@ import { describe, expect, it } from 'vitest';
 import {
   arrowGeometry,
   boundsFromPoints,
+  circleFromCenter,
   clampDelta,
   constrainLine,
   constrainSquare,
+  dashPattern,
   getBounds,
   isTooSmall,
   pathData,
   resizeBounds,
+  resizeCircle,
   simplifyPath,
   translateAnnotation,
 } from '../../src/annotations/geometry';
@@ -131,6 +134,47 @@ describe('constraints', () => {
     expect(bounds.y).toBeCloseTo(0.1);
     expect(bounds.w).toBeCloseTo(0.4);
     expect(bounds.h).toBeCloseTo(0.6);
+  });
+});
+
+describe('circles', () => {
+  const center = (b: { x: number; y: number; w: number; h: number }) => ({ x: b.x + b.w / 2, y: b.y + b.h / 2 });
+
+  it('are drawn from the centre and are round on screen, whatever the drag direction', () => {
+    const circle = circleFromCenter({ x: 0.5, y: 0.5 }, { x: 0.6, y: 0.52 }, ASPECT);
+    expect(circle.w * ASPECT).toBeCloseTo(circle.h);
+    expect(center(circle).x).toBeCloseTo(0.5);
+    expect(center(circle).y).toBeCloseTo(0.5);
+    // Radius is the on-screen distance to the pointer, in video heights.
+    expect(circle.h / 2).toBeCloseTo(Math.hypot(0.1 * ASPECT, 0.02));
+  });
+
+  it('stay inside the frame by moving inwards instead of shrinking', () => {
+    const circle = circleFromCenter({ x: 0.98, y: 0.05 }, { x: 0.98, y: 0.25 }, ASPECT);
+    expect(circle.h).toBeCloseTo(0.4);
+    expect(circle.x + circle.w).toBeLessThanOrEqual(1 + 1e-9);
+    expect(circle.y).toBeGreaterThanOrEqual(-1e-9);
+  });
+
+  it('resize about their centre', () => {
+    const original = circleFromCenter({ x: 0.4, y: 0.5 }, { x: 0.4, y: 0.6 }, ASPECT);
+    const resized = resizeCircle(original, { x: 0.4, y: 0.75 }, ASPECT);
+    expect(center(resized).x).toBeCloseTo(0.4);
+    expect(center(resized).y).toBeCloseTo(0.5);
+    expect(resized.h).toBeCloseTo(0.5);
+    expect(resized.w * ASPECT).toBeCloseTo(resized.h);
+  });
+});
+
+describe('dashPattern', () => {
+  it('is solid by default and for drawings saved before line styles existed', () => {
+    expect(dashPattern(undefined, 6)).toBeNull();
+    expect(dashPattern('solid', 6)).toBeNull();
+  });
+
+  it('scales dashes and dots with the stroke width', () => {
+    expect(dashPattern('dashed', 10)).toEqual([30, 22]);
+    expect(dashPattern('dotted', 10)).toEqual([0, 20]);
   });
 });
 

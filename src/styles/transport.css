@@ -245,3 +245,122 @@
     padding: 0 14px;
   }
 }
+
+/* ---- Film strip ----------------------------------------------------------
+   Neighbouring frames on a dark band with perforations, like a piece of film.
+   The band height is BAND in Filmstrip.tsx. */
+
+.filmstrip {
+  padding: 8px 16px 0;
+}
+
+.filmstrip[aria-disabled='true'] {
+  opacity: 0.5;
+}
+
+.filmstrip__viewport {
+  --perforation: repeating-linear-gradient(to right, var(--surface-4) 0 7px, transparent 7px 15px);
+  position: relative;
+  height: 62px;
+  overflow: hidden;
+  border-radius: var(--radius-s);
+  background:
+    var(--perforation) left 0 top 2px / 100% 4px no-repeat,
+    var(--perforation) left 0 bottom 2px / 100% 4px no-repeat,
+    #08090a;
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.filmstrip[aria-disabled='true'] .filmstrip__viewport {
+  cursor: default;
+}
+
+.filmstrip.is-dragging .filmstrip__viewport {
+  cursor: grabbing;
+}
+
+.filmstrip__row {
+  position: absolute;
+  top: 8px;
+  display: flex;
+  will-change: transform;
+  transition: transform 0.16s var(--ease);
+}
+
+.filmstrip.is-dragging .filmstrip__row {
+  transition: none;
+}
+
+.filmstrip__slot {
+  position: relative;
+  flex: none;
+  overflow: hidden;
+  border-radius: 3px;
+  background: var(--surface-2);
+  opacity: 0.62;
+  transition: opacity 0.12s var(--ease);
+}
+
+.filmstrip__slot:hover {
+  opacity: 0.9;
+}
+
+.filmstrip__slot[data-state='empty'] {
+  visibility: hidden;
+}
+
+.filmstrip__slot[data-state='loading'] canvas {
+  visibility: hidden;
+}
+
+.filmstrip__slot--center,
+.filmstrip__slot--center:hover {
+  opacity: 1;
+  outline: 2px solid var(--accent-bright);
+  outline-offset: -2px;
+}
+
+.filmstrip__slot canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.filmstrip__label {
+  position: absolute;
+  bottom: 2px;
+  left: 4px;
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 10px;
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+  text-shadow: 0 0 3px #000, 0 0 1px #000;
+  pointer-events: none;
+}
+
+/* A drawing was made on this frame. */
+.filmstrip__slot[data-marked='true']::after {
+  content: '';
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #ffd60a;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.5);
+}
+
+@media (max-width: 760px) {
+  .filmstrip {
+    padding: 6px 14px 0;
+  }
+
+  .filmstrip__viewport {
+    height: 50px;
+  }
+}

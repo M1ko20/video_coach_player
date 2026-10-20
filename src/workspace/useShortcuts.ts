@@ -6,6 +6,7 @@ import { useInteractionStore } from '../annotations/interactionStore';
 import { useToolStore } from '../annotations/toolStore';
 import { saveNow } from '../project/session';
 import { toggleFullscreen } from '../ui/fullscreen';
+import { useFilmstripStore } from '../video/Filmstrip';
 import { usePlaybackStore } from '../video/playbackStore';
 import { player } from '../video/player';
 
@@ -29,6 +30,7 @@ export const SHORTCUT_GROUPS: readonly ShortcutGroup[] = [
       { keys: ['Shift', '←', '→'], action: 'Back or forward 5 seconds' },
       { keys: ['Home', 'End'], action: 'Start or end of the video' },
       { keys: ['<', '>'], action: 'Slower or faster' },
+      { keys: ['S'], action: 'Show or hide the frame strip' },
       { keys: ['M'], action: 'Mute' },
       { keys: ['F'], action: 'Full screen' },
     ],
@@ -37,7 +39,7 @@ export const SHORTCUT_GROUPS: readonly ShortcutGroup[] = [
     title: 'Drawing',
     items: [
       ...TOOLS.map(({ label, shortcut }) => ({ keys: [shortcut], action: label })),
-      { keys: ['Shift'], action: 'While drawing: straight angles, perfect circles and squares' },
+      { keys: ['Shift'], action: 'While drawing: straight angles and perfect squares' },
       { keys: ['Double-click'], action: 'Edit a text' },
     ],
   },
@@ -56,6 +58,8 @@ export const SHORTCUT_GROUPS: readonly ShortcutGroup[] = [
     items: [
       { keys: ['Shift', 'drag'], action: 'Fine scrubbing (10× slower)' },
       { keys: ['Click a marker'], action: 'Jump to where a drawing was made' },
+      { keys: ['Drag the frame strip'], action: 'Move frame by frame' },
+      { keys: ['Scroll the frame strip'], action: 'Step one frame per notch' },
     ],
   },
 ];
@@ -154,6 +158,9 @@ export function useShortcuts(onShowShortcuts: () => void) {
           return;
         case 'm':
           player.toggleMuted();
+          return;
+        case 's':
+          useFilmstripStore.getState().toggle();
           return;
         case 'f':
           toggleFullscreen();

@@ -9,6 +9,7 @@ import './styles/library.css';
 import './styles/workspace.css';
 import './styles/overlay.css';
 import './styles/transport.css';
+import './styles/recording.css';
 
 void boot();
 

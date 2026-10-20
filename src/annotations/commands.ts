@@ -4,7 +4,7 @@ import { getSelectedAnnotation, useAnnotationStore } from './annotationStore';
 import { FONT_SIZES, STROKE_WIDTHS } from './constants';
 import { useInteractionStore } from './interactionStore';
 import { useToolStore } from './toolStore';
-import type { TextAnnotation, Tool } from './types';
+import type { StrokeStyle, TextAnnotation, Tool } from './types';
 
 /**
  * User-level commands. Toolbar buttons and keyboard shortcuts both go through
@@ -122,6 +122,15 @@ export function applySize(index: number) {
   } else {
     const strokeWidth = STROKE_WIDTHS[index]!;
     if (selected.strokeWidth !== strokeWidth) replace({ ...selected, strokeWidth });
+  }
+}
+
+/** Sets the stroke style for new drawings and restyles the selected one. Text has no stroke. */
+export function applyDash(dash: StrokeStyle) {
+  useToolStore.getState().setDash(dash);
+  const selected = getSelectedAnnotation();
+  if (selected && selected.type !== 'text' && (selected.dash ?? 'solid') !== dash) {
+    useAnnotationStore.getState().replace({ ...selected, dash });
   }
 }
 

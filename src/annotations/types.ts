@@ -29,6 +29,9 @@ export interface TimeRange {
   end: number;
 }
 
+/** How a stroke is drawn. Absent on drawings saved before it existed, which are solid. */
+export type StrokeStyle = 'solid' | 'dashed' | 'dotted';
+
 interface AnnotationBase {
   id: string;
   color: string;
@@ -46,6 +49,7 @@ export interface PathAnnotation extends AnnotationBase {
   /** Flat list of normalized coordinates: x0, y0, x1, y1, … */
   points: number[];
   strokeWidth: number;
+  dash?: StrokeStyle;
 }
 
 interface SegmentGeometry extends AnnotationBase {
@@ -54,6 +58,7 @@ interface SegmentGeometry extends AnnotationBase {
   x2: number;
   y2: number;
   strokeWidth: number;
+  dash?: StrokeStyle;
 }
 
 interface BoxGeometry extends AnnotationBase {
@@ -62,6 +67,7 @@ interface BoxGeometry extends AnnotationBase {
   w: number;
   h: number;
   strokeWidth: number;
+  dash?: StrokeStyle;
 }
 
 // Each shape has its own literal `type` so the union narrows cleanly.
@@ -74,13 +80,18 @@ export interface ArrowAnnotation extends SegmentGeometry {
 export interface RectAnnotation extends BoxGeometry {
   type: 'rect';
 }
+/**
+ * The circle tool. The stored type is still `ellipse` so analyses saved before
+ * circles were enforced load unchanged; new ones always have a box that is
+ * square on screen.
+ */
 export interface EllipseAnnotation extends BoxGeometry {
   type: 'ellipse';
 }
 
 /** Lines and arrows share the same geometry: two end points. */
 export type LineAnnotation = StraightLineAnnotation | ArrowAnnotation;
-/** Rectangles and ellipses share the same geometry: a bounding box. */
+/** Rectangles and circles share the same geometry: a bounding box. */
 export type BoxAnnotation = RectAnnotation | EllipseAnnotation;
 
 export interface TextAnnotation extends AnnotationBase {
@@ -97,6 +108,8 @@ export type AnnotationType = Annotation['type'];
 
 export type Tool = 'select' | AnnotationType;
 export type DrawTool = Exclude<Tool, 'select' | 'text'>;
+/** Annotations drawn with a stroke, which can be solid, dashed or dotted. */
+export type StrokedAnnotation = Exclude<Annotation, TextAnnotation>;
 
 export type BoxHandle = 'nw' | 'n' | 'ne' | 'e' | 'se' | 's' | 'sw' | 'w';
 export type LineHandle = 'start' | 'end';

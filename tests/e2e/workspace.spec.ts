@@ -114,7 +114,8 @@ test.describe('drawing', () => {
     await page.keyboard.press('a');
     await drag(page, [0.2, 0.7], [0.4, 0.4]);
     await page.keyboard.press('c');
-    await drag(page, [0.55, 0.3], [0.75, 0.6]);
+    // A circle centred at (0.65, 0.45) whose top passes through (0.65, 0.3).
+    await drag(page, [0.65, 0.45], [0.65, 0.3]);
     await page.keyboard.press('p');
     await drag(page, [0.1, 0.1], [0.3, 0.2]);
     await expect(shapes(page)).toHaveCount(3);
