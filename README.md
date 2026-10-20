@@ -5,9 +5,11 @@ moment, draw over it, step through frame by frame, record a voiced-over
 analysis to send to players, and come back to it later. Everything runs in the
 browser; no video is uploaded anywhere.
 
-- **Frame strip** under the video shows the neighbouring frames like a piece of
-  film. Drag it sideways to move frame by frame, click a frame to jump to it, or
-  scroll over it (one notch = one frame). `S` shows or hides it.
+- **Frame scrubber** under the video: a ruler with one tick per frame. Drag it
+  sideways to move frame by frame (flick to keep it turning), tap either side
+  of the centre line to step one frame, or scroll over it. `S` shows or hides it.
+- **Works with a finger or Apple Pencil on an iPad**: controls grow to finger
+  size on touch screens, and the layout regroups for tablets in portrait.
 - **Drawing**: freehand, line, arrow, circle, rectangle and text, in eight
   colours and four thicknesses. Lines, arrows, circles, rectangles and freehand
   strokes can be solid, dashed or dotted. Circles are always round and are drawn
@@ -31,7 +33,7 @@ npm run dev        # http://localhost:5173
 | `npm run preview`  | Serve the production build                              |
 | `npm run check`    | Type-check, lint and unit tests                         |
 | `npm test`         | Unit tests (Vitest)                                     |
-| `npm run test:e2e` | Browser tests (Playwright). Needs `ffmpeg` on the PATH to generate the test videos, and `npx playwright install chromium` once. |
+| `npm run test:e2e` | Browser tests (Playwright) in Chromium and WebKit. Needs `ffmpeg` on the PATH to generate the test videos, and `npx playwright install chromium webkit` once. |
 
 ## How it is built
 
@@ -41,7 +43,7 @@ stores, icons are from `lucide-react`; there is no UI kit, CSS framework or canv
 ```
 src/
   annotations/   drawing model, tools, SVG overlay, selection, undo history
-  video/         player controller, stage, timeline, frame strip, transport, frame-rate measurement
+  video/         player controller, stage, timeline, frame scrubber, transport, frame-rate measurement
   recording/     recording the analysis: canvas compositing, audio mixing, download
   project/       IndexedDB storage, open/save/close lifecycle, library screen
   workspace/     workspace layout, top bar, keyboard shortcuts, banners
@@ -66,11 +68,16 @@ Design decisions worth knowing before changing things:
   scrubbing cause zero React renders (there is a test for this).
 - **Seeks are coalesced.** While the decoder is busy only the latest requested
   position is kept, so dragging the playhead stays responsive on heavy files.
-- **The frame strip follows the playhead the same way.** Each slot is a canvas
-  repainted from a thumbnail cache when the frame changes. Thumbnails come from
-  a second, hidden `<video>` on the same file (so making them never moves the
-  main picture), decoded only once the playhead is still, nearest frames first;
-  frames the main video is already showing are copied from it for free.
+- **The frame scrubber follows the playhead the same way**, with one transform
+  per frame change. It deliberately has no thumbnails: decoding and copying
+  frames during playback made 2× playback stutter on slower devices.
+- **Touch is handled with pointer events throughout.** Sizes for fingers live
+  in `@media (pointer: coarse)` rules, and `@media (hover: none)` rules stop
+  tapped controls from looking hovered. The test suite runs in Chromium and in
+  WebKit (Safari's engine), and `touch.spec.ts` drives the app with real touch
+  events.
+- **Safari's private windows cannot store a Blob in IndexedDB**, so videos up
+  to 250 MB are then stored as raw bytes instead (`db.putVideo`).
 - **Recording composes the picture on a canvas** every display frame: the video
   frame, then the drawings through `recording/drawAnnotations.ts`, a canvas
   port of `ShapeView`. Keep the two in step when changing how shapes look.

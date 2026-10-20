@@ -26,7 +26,8 @@ test.describe('opening a video', () => {
 
     await openClip(page);
     await expect(page.getByTestId('fps-button')).toHaveText('25 fps');
-    await expect(page.locator('.readout__duration')).toHaveText('/ 0:06.00');
+    // WebKit reads the WebM container's duration a few milliseconds longer.
+    await expect(page.locator('.readout__duration')).toHaveText(/\/ 0:06\.0[01]/);
 
     const video = (await page.getByTestId('video').boundingBox())!;
     const layer = (await overlay(page).boundingBox())!;

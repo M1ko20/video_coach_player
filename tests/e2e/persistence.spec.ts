@@ -197,7 +197,9 @@ test.describe('missing video', () => {
     await expect(page.getByTestId('fps-button')).toHaveText('30 fps');
   });
 
-  test('a video too large for browser storage still works, with an honest warning', async ({ page }) => {
+  test('a video too large for browser storage still works, with an honest warning', async ({ page, browserName }) => {
+    // Playwright's WebKit runs without navigator.storage, so the quota cannot be faked there.
+    test.skip(browserName === 'webkit', 'needs navigator.storage.estimate');
     // Pretend the browser has almost no room left.
     await page.addInitScript(() => {
       navigator.storage.estimate = async () => ({ usage: 0, quota: 1024 });

@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { ToolRail } from '../annotations/ToolRail';
 import { useProjectStore } from '../project/projectStore';
-import { Filmstrip } from '../video/Filmstrip';
+import { FrameScrubber } from '../video/FrameScrubber';
 import { usePlaybackStore } from '../video/playbackStore';
 import { Timeline } from '../video/Timeline';
 import { Transport } from '../video/Transport';
@@ -49,7 +49,7 @@ export function Workspace() {
         <VideoStage />
       </main>
       <footer className="workspace__controls">
-        <Filmstrip />
+        <FrameScrubber />
         <Timeline />
         <Transport />
       </footer>

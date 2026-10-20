@@ -184,17 +184,44 @@ export function deleteProject(id: string): Promise<void> {
   });
 }
 
-export function putVideo(projectId: string, file: Blob): Promise<void> {
+/**
+ * Safari refuses to store Blobs in IndexedDB in private windows (and other
+ * ephemeral sessions), but accepts their bytes. Videos up to this size are
+ * then stored as an ArrayBuffer instead; larger ones would need too much
+ * memory for the copy, on an iPad especially.
+ */
+const BUFFER_FALLBACK_LIMIT = 250 * 1024 ** 2;
+
+/** How a video is stored when its Blob could not be. */
+interface StoredBytes {
+  buffer: ArrayBuffer;
+  type: string;
+}
+
+function putVideoValue(projectId: string, value: Blob | StoredBytes): Promise<void> {
   return transact(VIDEOS, 'readwrite', (tx) => {
-    tx.objectStore(VIDEOS).put(file, projectId);
+    tx.objectStore(VIDEOS).put(value, projectId);
     return () => undefined;
   });
 }
 
+export async function putVideo(projectId: string, file: Blob): Promise<void> {
+  try {
+    await putVideoValue(projectId, file);
+  } catch (error) {
+    if (isQuotaError(error) || file.size > BUFFER_FALLBACK_LIMIT) throw error;
+    await putVideoValue(projectId, { buffer: await file.arrayBuffer(), type: file.type });
+  }
+}
+
 export function getVideo(projectId: string): Promise<Blob | undefined> {
   return transact(VIDEOS, 'readonly', (tx) => {
-    const request = tx.objectStore(VIDEOS).get(projectId) as IDBRequest<Blob | undefined>;
-    return () => request.result;
+    const request = tx.objectStore(VIDEOS).get(projectId) as IDBRequest<Blob | StoredBytes | undefined>;
+    return () => {
+      const value = request.result;
+      if (value === undefined || value instanceof Blob) return value;
+      return new Blob([value.buffer], { type: value.type });
+    };
   });
 }
 

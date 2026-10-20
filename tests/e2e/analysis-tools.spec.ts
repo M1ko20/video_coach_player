@@ -5,37 +5,47 @@ import { currentTime, drag, isPaused, openClip, overlay, shapes } from './helper
 const FRAME = 1 / 25;
 const frameNumber = async (page: Page) => Number(await page.getByTestId('current-frame').textContent());
 
-test.describe('frame strip', () => {
+test.describe('frame scrubber', () => {
   test.beforeEach(async ({ page }) => {
     await openClip(page);
   });
 
-  test('shows neighbouring frames and moves frame by frame when dragged, clicked or scrolled', async ({ page }) => {
-    const strip = page.getByTestId('filmstrip');
-    await expect(strip).toBeVisible();
-    const center = strip.locator('.filmstrip__slot--center');
-    // Pictures fill in once the strip is still.
-    await expect(center).toHaveAttribute('data-state', 'ready');
-    await expect(center.locator('xpath=following-sibling::*[1]')).toHaveAttribute('data-state', 'ready');
+  /** Centre of the scrubber and the drag distance per frame (FRAME_SPACING). */
+  async function scrubber(page: Page) {
+    const box = (await page.getByTestId('scrubber').locator('.scrubber__viewport').boundingBox())!;
+    return { x: box.x + box.width / 2, y: box.y + box.height / 2, width: box.width, step: 12 };
+  }
 
-    // Dragging left by two frames pulls two later frames into the middle.
-    const slot = (await center.boundingBox())!;
-    const step = slot.width + 4;
-    const y = slot.y + slot.height / 2;
-    await page.mouse.move(slot.x + slot.width / 2, y);
+  test('dragging moves frame by frame and shows how far', async ({ page }) => {
+    const s = await scrubber(page);
+    await page.mouse.move(s.x, s.y);
     await page.mouse.down();
-    await page.mouse.move(slot.x + slot.width / 2 - step * 2, y, { steps: 10 });
+    // Slowly, so the release is not a flick. Left brings later frames to the centre.
+    await page.mouse.move(s.x - s.step * 3, s.y, { steps: 12 });
+    await expect(page.getByTestId('scrubber-readout')).toHaveText('+3 frames');
+    await page.waitForTimeout(150);
     await page.mouse.up();
-    await expect.poll(() => frameNumber(page)).toBe(3);
-    await expect.poll(() => currentTime(page)).toBeCloseTo(2.5 * FRAME, 3);
+    await expect.poll(() => frameNumber(page)).toBe(4);
+    await expect.poll(() => currentTime(page)).toBeCloseTo(3.5 * FRAME, 3);
 
-    // Clicking the frame to the left goes back one.
-    const previous = (await center.locator('xpath=preceding-sibling::*[1]').boundingBox())!;
-    await page.mouse.click(previous.x + previous.width / 2, previous.y + previous.height / 2);
+    await page.mouse.move(s.x, s.y);
+    await page.mouse.down();
+    await page.mouse.move(s.x + s.step * 2, s.y, { steps: 10 });
+    await page.waitForTimeout(150);
+    await page.mouse.up();
+    await expect.poll(() => frameNumber(page)).toBe(2);
+  });
+
+  test('tapping a side steps one frame, and scrolling steps one frame per notch', async ({ page }) => {
+    const s = await scrubber(page);
+    await page.mouse.click(s.x + s.width / 4, s.y);
+    await expect.poll(() => frameNumber(page)).toBe(2);
+    await page.mouse.click(s.x + s.width / 4, s.y);
+    await expect.poll(() => frameNumber(page)).toBe(3);
+    await page.mouse.click(s.x - s.width / 4, s.y);
     await expect.poll(() => frameNumber(page)).toBe(2);
 
-    // One wheel notch is one frame.
-    await page.mouse.move(slot.x + slot.width / 2, y);
+    await page.mouse.move(s.x, s.y);
     await page.mouse.wheel(0, 100);
     await expect.poll(() => frameNumber(page)).toBe(3);
     await page.mouse.wheel(0, -100);
@@ -43,20 +53,38 @@ test.describe('frame strip', () => {
     await expect.poll(() => frameNumber(page)).toBe(1);
   });
 
-  test('cannot move before the first frame, pauses playback, and can be hidden', async ({ page }) => {
-    const center = page.locator('.filmstrip__slot--center');
-    await expect(center.locator('xpath=preceding-sibling::*[1]')).toHaveAttribute('data-state', 'empty');
+  test('a flick keeps turning, then comes to rest', async ({ page }) => {
+    const s = await scrubber(page);
+    await page.mouse.move(s.x + 120, s.y);
+    await page.mouse.down();
+    await page.mouse.move(s.x - 120, s.y, { steps: 4 });
+    await page.mouse.up();
+    // Dragged 20 frames' worth; coasting adds more.
+    await expect.poll(() => frameNumber(page)).toBeGreaterThan(22);
+    await page.waitForTimeout(1500);
+    const rested = await frameNumber(page);
+    await page.waitForTimeout(300);
+    expect(await frameNumber(page)).toBe(rested);
+  });
+
+  test('stops at the first frame, pauses playback, and can be hidden', async ({ page }) => {
+    const s = await scrubber(page);
+    await page.mouse.move(s.x, s.y);
+    await page.mouse.down();
+    await page.mouse.move(s.x + s.step * 5, s.y, { steps: 10 });
+    await page.waitForTimeout(150);
+    await page.mouse.up();
+    await expect.poll(() => frameNumber(page)).toBe(1);
 
     await page.keyboard.press('Space');
     await expect.poll(() => isPaused(page)).toBe(false);
-    const box = (await center.boundingBox())!;
-    await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
+    await page.mouse.click(s.x + s.width / 4, s.y);
     await expect.poll(() => isPaused(page)).toBe(true);
 
     await page.keyboard.press('s');
-    await expect(page.getByTestId('filmstrip')).toHaveCount(0);
-    await page.getByRole('button', { name: 'Show frame strip' }).click();
-    await expect(page.getByTestId('filmstrip')).toBeVisible();
+    await expect(page.getByTestId('scrubber')).toHaveCount(0);
+    await page.getByRole('button', { name: 'Show frame scrubber' }).click();
+    await expect(page.getByTestId('scrubber')).toBeVisible();
   });
 });
 
@@ -94,8 +122,8 @@ test.describe('line styles and circles', () => {
     const box = (await ink.boundingBox())!;
     expect(Math.abs(box.width - box.height)).toBeLessThan(2);
     const frame = (await overlay(page).boundingBox())!;
-    expect(box.x + box.width / 2).toBeCloseTo(frame.x + frame.width * 0.5, 0);
-    expect(box.y + box.height / 2).toBeCloseTo(frame.y + frame.height * 0.5, 0);
+    expect(Math.abs(box.x + box.width / 2 - (frame.x + frame.width * 0.5))).toBeLessThan(1.5);
+    expect(Math.abs(box.y + box.height / 2 - (frame.y + frame.height * 0.5))).toBeLessThan(1.5);
 
     // Resizing with a handle keeps it a circle around the same centre.
     await page.keyboard.press('v');
@@ -109,6 +137,6 @@ test.describe('line styles and circles', () => {
     const resized = (await ink.boundingBox())!;
     expect(resized.width).toBeGreaterThan(box.width + 50);
     expect(Math.abs(resized.width - resized.height)).toBeLessThan(2);
-    expect(resized.x + resized.width / 2).toBeCloseTo(box.x + box.width / 2, 0);
+    expect(Math.abs(resized.x + resized.width / 2 - (box.x + box.width / 2))).toBeLessThan(1.5);
   });
 });

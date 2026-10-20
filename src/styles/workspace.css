@@ -247,26 +247,17 @@
   grid-area: controls;
   position: relative;
   z-index: 15;
+  /* Clear the home indicator on tablets and phones. */
+  padding-bottom: env(safe-area-inset-bottom);
   border-top: 1px solid var(--border);
   background: var(--surface-1);
 }
 
-/* ---- Narrow screens ------------------------------------------------------
-   Controls are regrouped rather than shrunk: the tools move under the video
-   as a horizontal strip, and the style options get their own row. */
+/* ---- Medium widths -------------------------------------------------------
+   Tablets in portrait and small windows: the style options move to their own
+   row under the name and actions instead of overflowing. */
 
-@media (max-width: 760px) {
-  .workspace {
-    grid-template-columns: minmax(0, 1fr);
-    grid-template-rows: auto auto minmax(0, 1fr) auto auto;
-    grid-template-areas:
-      'topbar'
-      'banners'
-      'stage'
-      'rail'
-      'controls';
-  }
-
+@media (max-width: 1100px) {
   .topbar {
     grid-template-columns: minmax(0, 1fr) auto;
     grid-template-areas:
@@ -291,6 +282,41 @@
     justify-content: center;
     padding: 4px 0 6px;
     overflow-x: auto;
+  }
+}
+
+/* Tablets in landscape: the bigger touch controls leave no room for the save label; its icon stays. */
+@media (pointer: coarse) and (max-width: 1300px) {
+  .save__label {
+    display: none;
+  }
+}
+
+@media (pointer: coarse) {
+  .rail .icon-button {
+    width: 44px;
+    height: 44px;
+  }
+
+  :root {
+    --rail-width: 56px;
+  }
+}
+
+/* ---- Narrow screens ------------------------------------------------------
+   Controls are regrouped rather than shrunk: the tools move under the video
+   as a horizontal strip, and the style options get their own row. */
+
+@media (max-width: 760px) {
+  .workspace {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto auto minmax(0, 1fr) auto auto;
+    grid-template-areas:
+      'topbar'
+      'banners'
+      'stage'
+      'rail'
+      'controls';
   }
 
   .save__label {

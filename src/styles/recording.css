@@ -93,13 +93,21 @@
   text-decoration: none;
 }
 
+@media (pointer: coarse) {
+  .record-button {
+    height: 38px;
+    padding: 0 14px 0 12px;
+    border-radius: 19px;
+  }
+}
+
 @media (max-width: 760px) {
   .record-button__label {
     display: none;
   }
 
   .record-button:not(.is-recording) {
-    width: 30px;
+    width: var(--control);
     padding: 0;
     justify-content: center;
   }

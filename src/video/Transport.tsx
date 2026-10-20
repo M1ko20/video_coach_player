@@ -1,4 +1,4 @@
-import { Check, Film, Maximize, Minimize, Pause, Play, StepBack, StepForward, Volume2, VolumeX } from 'lucide-react';
+import { Check, ChevronsLeftRightEllipsis, Maximize, Minimize, Pause, Play, StepBack, StepForward, Volume2, VolumeX } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { useProjectStore } from '../project/projectStore';
 import { setManualFrameRate } from '../project/session';
@@ -6,7 +6,7 @@ import { formatFrameRate, formatTime, frameAtTime } from '../lib/time';
 import { toggleFullscreen, useFullscreen } from '../ui/fullscreen';
 import { IconButton, keepFocus } from '../ui/IconButton';
 import { useRepeatPress } from '../ui/useRepeatPress';
-import { useFilmstripStore } from './Filmstrip';
+import { useScrubberStore } from './FrameScrubber';
 import { PLAYBACK_RATES, usePlaybackStore } from './playbackStore';
 import { player } from './player';
 
@@ -134,8 +134,8 @@ export function Transport() {
   const playing = usePlaybackStore((state) => state.playing);
   const rate = usePlaybackStore((state) => state.rate);
   const muted = usePlaybackStore((state) => state.muted);
-  const filmstrip = useFilmstripStore((state) => state.visible);
-  const toggleFilmstrip = useFilmstripStore((state) => state.toggle);
+  const scrubber = useScrubberStore((state) => state.visible);
+  const toggleScrubber = useScrubberStore((state) => state.toggle);
   const fullscreen = useFullscreen();
   const stepBack = useRepeatPress(() => player.stepFrames(-1));
   const stepForward = useRepeatPress(() => player.stepFrames(1));
@@ -185,8 +185,13 @@ export function Transport() {
           ))}
         </div>
         <FrameRateControl />
-        <IconButton label={filmstrip ? 'Hide frame strip' : 'Show frame strip'} shortcut="S" active={filmstrip} onClick={toggleFilmstrip}>
-          <Film size={18} />
+        <IconButton
+          label={scrubber ? 'Hide frame scrubber' : 'Show frame scrubber'}
+          shortcut="S"
+          active={scrubber}
+          onClick={toggleScrubber}
+        >
+          <ChevronsLeftRightEllipsis size={18} />
         </IconButton>
         <IconButton label={muted ? 'Unmute' : 'Mute'} shortcut="M" onClick={() => player.toggleMuted()}>
           {muted ? <VolumeX size={18} /> : <Volume2 size={18} />}
