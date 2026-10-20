@@ -94,6 +94,26 @@
   height: 40px;
 }
 
+.rail__tool-color {
+  position: absolute;
+  right: 6px;
+  bottom: 6px;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  /* The inner ring keeps a black dot visible on the dark rail. */
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.4),
+    0 0 0 1.5px var(--surface-1);
+  pointer-events: none;
+}
+
+.rail .icon-button.is-active .rail__tool-color {
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.4),
+    0 0 0 1.5px var(--accent);
+}
+
 .rail__separator {
   flex: none;
   width: 24px;

@@ -43,6 +43,7 @@ interface ToolRailProps {
 /** Drawing tools, history and delete actions. */
 export function ToolRail({ tooltipSide, disabled = false }: ToolRailProps) {
   const tool = useToolStore((state) => state.tool);
+  const styles = useToolStore((state) => state.styles);
   const canUndo = useAnnotationStore((state) => state.past.length > 0);
   const canRedo = useAnnotationStore((state) => state.future.length > 0);
   const hasSelection = useAnnotationStore((state) => state.selectedId !== null);
@@ -66,6 +67,10 @@ export function ToolRail({ tooltipSide, disabled = false }: ToolRailProps) {
               onClick={() => selectTool(id)}
             >
               <Icon size={18} strokeWidth={2} />
+              {/* Each drawing tool remembers its own colour. */}
+              {id !== 'select' && (
+                <span className="rail__tool-color" style={{ background: styles[id].color }} aria-hidden="true" />
+              )}
             </IconButton>
           );
         })}

@@ -213,7 +213,7 @@ export function useOverlayPointer(svgRef: RefObject<SVGSVGElement | null>, aspec
       const rect = svg.getBoundingClientRect();
       const point = toPoint(event.clientX, event.clientY, rect);
       const base: GestureBase = { pointerId: event.pointerId, rect, current: point, shiftKey: event.shiftKey };
-      const { tool, color, sizeIndex, dash } = useToolStore.getState();
+      const { tool, styles } = useToolStore.getState();
       const annotations = useAnnotationStore.getState();
 
       if (tool === 'text') {
@@ -252,6 +252,7 @@ export function useOverlayPointer(svgRef: RefObject<SVGSVGElement | null>, aspec
 
       // Drawing starts on a still frame: pause so the footage does not move underneath.
       player.pause();
+      const { color, sizeIndex, dash } = styles[tool];
       annotations.select(null);
       beginGesture({
         ...base,

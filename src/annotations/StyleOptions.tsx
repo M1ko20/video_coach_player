@@ -8,14 +8,16 @@ import {
   STROKE_STYLES,
   STROKE_WIDTHS,
   TEXT_SIZE_LABELS,
+  TOOLS,
   closestIndex,
 } from './constants';
 import { dashPattern } from './geometry';
 import { useInteractionStore } from './interactionStore';
 import { useToolStore } from './toolStore';
+import type { StrokeStyle } from './types';
 
 /** A short sample of a stroke style, drawn the way the overlay draws it. */
-function DashSample({ style }: { style: (typeof STROKE_STYLES)[number]['value'] }) {
+function DashSample({ style }: { style: StrokeStyle }) {
   return (
     <svg width="22" height="8" viewBox="0 0 22 8" aria-hidden="true">
       <line
@@ -34,27 +36,29 @@ function DashSample({ style }: { style: (typeof STROKE_STYLES)[number]['value'] 
 
 /**
  * Color, size and line style controls. They show the style of whatever they will affect:
- * the text being typed, else the selected drawing, else the next drawing.
+ * the text being typed, else the selected drawing, else the active tool's own style.
  */
 export function StyleOptions({ disabled = false }: { disabled?: boolean }) {
   const tool = useToolStore((state) => state.tool);
-  const toolColor = useToolStore((state) => state.color);
-  const toolSizeIndex = useToolStore((state) => state.sizeIndex);
-  const toolDash = useToolStore((state) => state.dash);
+  const toolStyle = useToolStore((state) => (state.tool === 'select' ? null : state.styles[state.tool]));
   const selected = useAnnotationStore((state) =>
     state.selectedId === null ? null : (state.items.find((item) => item.id === state.selectedId) ?? null),
   );
   const textEdit = useInteractionStore((state) => state.textEdit);
 
-  let color = toolColor;
-  let sizeIndex = toolSizeIndex;
+  // What the controls show and change. With the Select tool and nothing
+  // selected there is nothing to style, so they are disabled.
+  let color: string | null = null;
+  let sizeIndex = -1;
+  let dash: StrokeStyle | null = null;
   let isText = tool === 'text';
-  let dash = toolDash;
+  let target = 'Nothing selected';
 
   if (textEdit) {
     color = textEdit.color;
     sizeIndex = closestIndex(FONT_SIZES, textEdit.fontSize);
     isText = true;
+    target = 'Text being typed';
   } else if (selected) {
     color = selected.color;
     isText = selected.type === 'text';
@@ -63,13 +67,21 @@ export function StyleOptions({ disabled = false }: { disabled?: boolean }) {
       selected.type === 'text'
         ? closestIndex(FONT_SIZES, selected.fontSize)
         : closestIndex(STROKE_WIDTHS, selected.strokeWidth);
+    target = 'Selected drawing';
+  } else if (toolStyle) {
+    ({ color, sizeIndex, dash } = toolStyle);
+    target = `${TOOLS.find((option) => option.tool === tool)?.label ?? 'Tool'} tool`;
   }
 
+  const inactive = disabled || color === null;
   const sizeLabels = isText ? TEXT_SIZE_LABELS : SIZE_LABELS;
-  const target = textEdit || selected ? 'Selected drawing' : 'Next drawing';
 
   return (
-    <div className="style-options" aria-label={`${target} style`}>
+    <div
+      className="style-options"
+      aria-label={`${target} style`}
+      title={color === null && !disabled ? 'Pick a drawing tool, or select a drawing, to choose its style' : undefined}
+    >
       <div className="swatches" role="radiogroup" aria-label="Color">
         {COLORS.map((option) => (
           <button
@@ -81,7 +93,7 @@ export function StyleOptions({ disabled = false }: { disabled?: boolean }) {
             data-tooltip={option.label}
             data-tooltip-side="bottom"
             className="swatch"
-            disabled={disabled}
+            disabled={inactive}
             style={{ '--swatch': option.value } as React.CSSProperties}
             onMouseDown={keepFocus}
             onClick={() => applyColor(option.value)}
@@ -102,7 +114,7 @@ export function StyleOptions({ disabled = false }: { disabled?: boolean }) {
             data-tooltip={`${isText ? 'Text size' : 'Thickness'}: ${label.toLowerCase()}`}
             data-tooltip-side="bottom"
             className="size"
-            disabled={disabled}
+            disabled={inactive}
             onMouseDown={keepFocus}
             onClick={() => applySize(index)}
           >
@@ -125,13 +137,13 @@ export function StyleOptions({ disabled = false }: { disabled?: boolean }) {
             key={option.value}
             type="button"
             role="radio"
-            aria-checked={!isText && dash === option.value}
+            aria-checked={dash === option.value}
             aria-label={option.label}
             data-tooltip={`Line: ${option.label.toLowerCase()}`}
             data-tooltip-side="bottom"
             className="size"
             // Text has no outline to dash.
-            disabled={disabled || isText}
+            disabled={inactive || isText}
             onMouseDown={keepFocus}
             onClick={() => applyDash(option.value)}
           >

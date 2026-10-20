@@ -18,8 +18,8 @@ import {
 async function drawThree(page: Page) {
   await page.keyboard.press('a');
   await drag(page, [0.2, 0.7], [0.4, 0.4]);
-  await page.getByRole('radio', { name: 'Red' }).click();
   await page.keyboard.press('c');
+  await page.getByRole('radio', { name: 'Red' }).click();
   await drag(page, [0.55, 0.3], [0.75, 0.6]);
   await page.keyboard.press('t');
   await clickVideo(page, [0.1, 0.1]);

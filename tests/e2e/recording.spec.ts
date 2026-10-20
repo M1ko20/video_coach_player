@@ -10,8 +10,8 @@ test.use({
 test.describe('recording', () => {
   test('records the video with the drawings and offers it for download', async ({ page, browserName }) => {
     await openClip(page);
-    await page.getByRole('radio', { name: 'Thick', exact: true }).click();
     await page.keyboard.press('r');
+    await page.getByRole('radio', { name: 'Thick', exact: true }).click();
     await drag(page, [0.2, 0.2], [0.8, 0.8]);
 
     await page.getByTestId('record-button').click();

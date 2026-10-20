@@ -3,7 +3,7 @@ import { player } from '../video/player';
 import { getSelectedAnnotation, useAnnotationStore } from './annotationStore';
 import { FONT_SIZES, STROKE_WIDTHS } from './constants';
 import { useInteractionStore } from './interactionStore';
-import { useToolStore } from './toolStore';
+import { useToolStore, type ToolStyle } from './toolStore';
 import type { StrokeStyle, TextAnnotation, Tool } from './types';
 
 /**
@@ -53,7 +53,7 @@ export function cancelTextEdit() {
 
 /** Opens the inline editor for a new text at a point (normalized coordinates). */
 export function beginText(x: number, y: number) {
-  const { color, sizeIndex } = useToolStore.getState();
+  const { color, sizeIndex } = useToolStore.getState().styles.text;
   player.pause();
   useAnnotationStore.getState().select(null);
   useInteractionStore.getState().setTextEdit({
@@ -89,49 +89,66 @@ export function selectTool(tool: Tool) {
   if (tool !== 'select') useAnnotationStore.getState().select(null);
 }
 
-/** Sets the color for new drawings and recolors whatever is being edited or selected. */
-export function applyColor(color: string) {
-  useToolStore.getState().setColor(color);
+/**
+ * Style changes go to whatever the style controls are showing: the text being
+ * typed (which also becomes the text tool's style), else the selected drawing
+ * (its tool's own style is left alone), else the active drawing tool's style.
+ */
+function setToolStyle(patch: Partial<ToolStyle>) {
+  const { tool, setStyle } = useToolStore.getState();
+  if (tool !== 'select') setStyle(tool, patch);
+}
 
+/** Recolors whatever the style controls apply to. */
+export function applyColor(color: string) {
   const { textEdit, setTextEdit } = useInteractionStore.getState();
   if (textEdit) {
+    useToolStore.getState().setStyle('text', { color });
     setTextEdit({ ...textEdit, color });
     return;
   }
   const selected = getSelectedAnnotation();
-  if (selected && selected.color !== color) {
-    useAnnotationStore.getState().replace({ ...selected, color });
+  if (selected) {
+    if (selected.color !== color) useAnnotationStore.getState().replace({ ...selected, color });
+    return;
   }
+  setToolStyle({ color });
 }
 
-/** Sets the size step for new drawings and resizes whatever is being edited or selected. */
+/** Resizes whatever the style controls apply to: stroke width, or font size for text. */
 export function applySize(index: number) {
-  useToolStore.getState().setSizeIndex(index);
-
   const { textEdit, setTextEdit } = useInteractionStore.getState();
   if (textEdit) {
+    useToolStore.getState().setStyle('text', { sizeIndex: index });
     setTextEdit({ ...textEdit, fontSize: FONT_SIZES[index]! });
     return;
   }
   const selected = getSelectedAnnotation();
-  if (!selected) return;
-  const { replace } = useAnnotationStore.getState();
-  if (selected.type === 'text') {
-    const fontSize = FONT_SIZES[index]!;
-    if (selected.fontSize !== fontSize) replace({ ...selected, fontSize });
-  } else {
-    const strokeWidth = STROKE_WIDTHS[index]!;
-    if (selected.strokeWidth !== strokeWidth) replace({ ...selected, strokeWidth });
+  if (selected) {
+    const { replace } = useAnnotationStore.getState();
+    if (selected.type === 'text') {
+      const fontSize = FONT_SIZES[index]!;
+      if (selected.fontSize !== fontSize) replace({ ...selected, fontSize });
+    } else {
+      const strokeWidth = STROKE_WIDTHS[index]!;
+      if (selected.strokeWidth !== strokeWidth) replace({ ...selected, strokeWidth });
+    }
+    return;
   }
+  setToolStyle({ sizeIndex: index });
 }
 
-/** Sets the stroke style for new drawings and restyles the selected one. Text has no stroke. */
+/** Sets the stroke style of whatever the style controls apply to. Text has no stroke. */
 export function applyDash(dash: StrokeStyle) {
-  useToolStore.getState().setDash(dash);
+  if (useInteractionStore.getState().textEdit) return;
   const selected = getSelectedAnnotation();
-  if (selected && selected.type !== 'text' && (selected.dash ?? 'solid') !== dash) {
-    useAnnotationStore.getState().replace({ ...selected, dash });
+  if (selected) {
+    if (selected.type !== 'text' && (selected.dash ?? 'solid') !== dash) {
+      useAnnotationStore.getState().replace({ ...selected, dash });
+    }
+    return;
   }
+  setToolStyle({ dash });
 }
 
 export function deleteSelected() {

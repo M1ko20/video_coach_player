@@ -13,7 +13,9 @@ browser; no video is uploaded anywhere.
 - **Drawing**: freehand, line, arrow, circle, rectangle and text, in eight
   colours and four thicknesses. Lines, arrows, circles, rectangles and freehand
   strokes can be solid, dashed or dotted. Circles are always round and are drawn
-  from the centre outwards.
+  from the centre outwards. Each tool remembers its own colour, thickness and
+  line style (shown as a dot on its button); with the Select tool the style
+  controls change only the selected drawing.
 - **Record** (top bar) records the video with the drawings burnt in, the video's
   sound (unless muted) and your voice from the microphone. Pause, step and draw
   while recording; all of it is in the result. Stop gives a preview and a
@@ -102,6 +104,9 @@ Saved automatically in this browser (IndexedDB), per analysis:
 - the measured or manually chosen frame rate
 
 Not saved: undo history, the current selection, playback speed.
+
+Saved for this browser, across all analyses: the active tool, each tool's
+style, whether the frame scrubber is shown, and mute.
 
 If the video copy cannot be kept (storage full, or evicted by the browser) the
 drawings are still saved, the workspace says so, and the next visit asks for the

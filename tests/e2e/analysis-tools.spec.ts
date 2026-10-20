@@ -88,14 +88,72 @@ test.describe('frame scrubber', () => {
   });
 });
 
+test.describe('tool styles', () => {
+  test.beforeEach(async ({ page }) => {
+    await openClip(page);
+  });
+
+  const checked = (page: Page, group: string) =>
+    page.getByRole('radiogroup', { name: group }).locator('[aria-checked="true"]');
+
+  test('each tool keeps its own colour, thickness and line style', async ({ page }) => {
+    await page.keyboard.press('a');
+    await page.getByRole('radio', { name: 'Red' }).click();
+    await page.getByRole('radio', { name: 'Thick', exact: true }).click();
+    await page.getByRole('radio', { name: 'Dashed' }).click();
+    await drag(page, [0.2, 0.7], [0.4, 0.4]);
+
+    // Another tool is unaffected and keeps its defaults.
+    await page.keyboard.press('c');
+    await expect(checked(page, 'Color')).toHaveAccessibleName('Yellow');
+    await expect(checked(page, 'Line style')).toHaveAccessibleName('Solid');
+    await page.getByRole('radio', { name: 'Blue' }).click();
+    await drag(page, [0.65, 0.45], [0.65, 0.3]);
+    await expect(overlay(page).locator('ellipse.shape__ink')).toHaveAttribute('stroke', '#0a84ff');
+
+    // Back on the arrow, its own style is still there and is used for the next arrow.
+    await page.keyboard.press('a');
+    await expect(checked(page, 'Color')).toHaveAccessibleName('Red');
+    await expect(checked(page, 'Line thickness')).toHaveAccessibleName('Thick');
+    await expect(checked(page, 'Line style')).toHaveAccessibleName('Dashed');
+    await drag(page, [0.2, 0.2], [0.4, 0.3]);
+    const arrows = overlay(page).locator('g[data-id] line.shape__ink');
+    await expect(arrows.nth(1)).toHaveAttribute('stroke', '#ff453a');
+    await expect(arrows.nth(1)).toHaveAttribute('stroke-width', '10');
+    await expect(page.locator('[data-tool-button="arrow"] .rail__tool-color')).toHaveCSS('background-color', 'rgb(255, 69, 58)');
+
+    // Remembered across reloads.
+    await page.reload();
+    await expect(page.getByTestId('video-frame')).toBeVisible();
+    await expect(page.locator('[data-tool-button="arrow"]')).toHaveAttribute('aria-pressed', 'true');
+    await expect(checked(page, 'Color')).toHaveAccessibleName('Red');
+    await page.keyboard.press('c');
+    await expect(checked(page, 'Color')).toHaveAccessibleName('Blue');
+  });
+
+  test('restyling a selected drawing leaves the tools alone; with nothing selected there is nothing to style', async ({ page }) => {
+    await page.keyboard.press('r');
+    await drag(page, [0.2, 0.2], [0.4, 0.5]);
+    await page.keyboard.press('v');
+    await expect(page.getByRole('radio', { name: 'Red' })).toBeDisabled();
+
+    await drag(page, [0.25, 0.2], [0.26, 0.21], 2);
+    await page.getByRole('radio', { name: 'Green' }).click();
+    await expect(shapes(page).first().locator('.shape__ink')).toHaveAttribute('stroke', '#30d158');
+
+    await page.keyboard.press('r');
+    await expect(checked(page, 'Color')).toHaveAccessibleName('Yellow');
+  });
+});
+
 test.describe('line styles and circles', () => {
   test.beforeEach(async ({ page }) => {
     await openClip(page);
   });
 
   test('lines can be dashed or dotted, and a selected drawing can be restyled', async ({ page }) => {
-    await page.getByRole('radio', { name: 'Dashed' }).click();
     await page.keyboard.press('a');
+    await page.getByRole('radio', { name: 'Dashed' }).click();
     await drag(page, [0.2, 0.7], [0.5, 0.4]);
     const ink = shapes(page).first().locator('line.shape__ink');
     await expect(ink).toHaveAttribute('stroke-dasharray', /\d/);
