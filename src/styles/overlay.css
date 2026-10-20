@@ -1,0 +1,124 @@
+/* The drawing layer: an SVG covering exactly the same box as the video. */
+.overlay {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  cursor: default;
+  outline: none;
+  /* Drawing must not scroll the page, select text or start a drag. */
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+}
+
+.overlay[data-tool='path'],
+.overlay[data-tool='line'],
+.overlay[data-tool='arrow'],
+.overlay[data-tool='rect'],
+.overlay[data-tool='ellipse'] {
+  cursor: crosshair;
+}
+
+.overlay[data-tool='text'] {
+  cursor: text;
+}
+
+/* ---- Shapes -------------------------------------------------------------- */
+
+.shape__ink,
+.shape__halo {
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  pointer-events: none;
+}
+
+.shape__text {
+  paint-order: stroke;
+  stroke-linejoin: round;
+  white-space: pre;
+  pointer-events: none;
+}
+
+/* Invisible, wider copy of each shape so thin lines are easy to click.
+   Only the Select tool can hit shapes; drawing tools draw straight over them. */
+.shape__hit {
+  fill: none;
+  stroke: transparent;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  pointer-events: none;
+}
+
+.overlay[data-tool='select'] .shape__hit {
+  pointer-events: stroke;
+  cursor: move;
+}
+
+.overlay[data-tool='select'] .shape__hit--area {
+  fill: transparent;
+  pointer-events: all;
+}
+
+.overlay .overlay__draft .shape__hit {
+  pointer-events: none;
+}
+
+/* ---- Selection ----------------------------------------------------------- */
+
+.selection__outline {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 1.5px;
+  stroke-dasharray: 5 4;
+  vector-effect: non-scaling-stroke;
+  pointer-events: none;
+}
+
+.selection__outline--under {
+  stroke: rgba(255, 255, 255, 0.92);
+  stroke-width: 2.5px;
+  stroke-dasharray: none;
+}
+
+.selection__handle {
+  fill: #ffffff;
+  stroke: var(--accent);
+  stroke-width: 1.5px;
+  vector-effect: non-scaling-stroke;
+  pointer-events: none;
+}
+
+.selection__handle-hit {
+  fill: transparent;
+  pointer-events: all;
+}
+
+/* ---- Inline text editor -------------------------------------------------- */
+
+.text-editor {
+  position: absolute;
+  z-index: 2;
+  display: block;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 2px;
+  background: rgba(0, 0, 0, 0.35);
+  outline: 1.5px dashed var(--accent-bright);
+  outline-offset: 5px;
+  overflow: hidden;
+  resize: none;
+  white-space: pre;
+  caret-color: currentColor;
+  -webkit-text-stroke: 0;
+}
+
+.text-editor::placeholder {
+  color: currentColor;
+  opacity: 0.45;
+}

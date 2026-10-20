@@ -1,0 +1,329 @@
+/* The video gets every pixel the controls do not need. */
+.workspace {
+  display: grid;
+  grid-template-columns: var(--rail-width) minmax(0, 1fr);
+  grid-template-rows: auto auto minmax(0, 1fr) auto;
+  grid-template-areas:
+    'topbar topbar'
+    'banners banners'
+    'rail stage'
+    'controls controls';
+  height: 100dvh;
+  overflow: hidden;
+  background: var(--bg);
+}
+
+/* ---- Top bar ------------------------------------------------------------- */
+
+.topbar {
+  grid-area: topbar;
+  position: relative;
+  z-index: 20;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: center;
+  gap: 12px;
+  height: var(--topbar-height);
+  padding: 0 8px;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface-1);
+}
+
+.topbar__left,
+.topbar__right {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+}
+
+.topbar__right {
+  justify-content: flex-end;
+}
+
+.project-name {
+  min-width: 0;
+  max-width: 100%;
+  height: 32px;
+  padding: 0 8px;
+  border: 1px solid transparent;
+  border-radius: var(--radius-s);
+  background: transparent;
+  font-size: 14px;
+  font-weight: 600;
+  text-overflow: ellipsis;
+}
+
+.project-name:hover {
+  border-color: var(--border-strong);
+}
+
+.project-name:focus {
+  border-color: var(--accent);
+  background: var(--bg);
+  outline: none;
+}
+
+.banners {
+  grid-area: banners;
+}
+
+/* ---- Tool rail ----------------------------------------------------------- */
+
+.rail {
+  grid-area: rail;
+  position: relative;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 0;
+  border-right: 1px solid var(--border);
+  background: var(--surface-1);
+}
+
+.rail__group {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.rail .icon-button {
+  width: 40px;
+  height: 40px;
+}
+
+.rail__separator {
+  flex: none;
+  width: 24px;
+  height: 1px;
+  background: var(--border-strong);
+}
+
+.rail__spacer {
+  flex: 1;
+}
+
+/* On short windows, tighten the rail instead of letting it scroll (which would clip tooltips). */
+@media (max-height: 640px) and (min-width: 761px) {
+  .rail {
+    gap: 4px;
+    padding: 4px 0;
+  }
+
+  .rail .icon-button {
+    width: 34px;
+    height: 34px;
+  }
+
+  .rail__group {
+    gap: 0;
+  }
+}
+
+/* ---- Stage --------------------------------------------------------------- */
+
+.workspace__stage {
+  grid-area: stage;
+  position: relative;
+  min-width: 0;
+  min-height: 0;
+  background: var(--stage);
+}
+
+.stage {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+}
+
+/* Positioned absolutely so its size can never feed back into the stage's own size. */
+.stage__frame {
+  position: absolute;
+  background: #000;
+}
+
+.stage__video {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  /* The frame already has the video's aspect ratio; "fill" guarantees the
+     picture covers exactly the same box as the drawing layer. */
+  object-fit: fill;
+  pointer-events: none;
+}
+
+.stage__loading {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  color: rgba(255, 255, 255, 0.75);
+  pointer-events: none;
+}
+
+.missing-video {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 24px;
+  overflow-y: auto;
+  text-align: center;
+  border: 1.5px dashed transparent;
+  transition:
+    background 0.15s var(--ease),
+    border-color 0.15s var(--ease);
+}
+
+.missing-video.is-dragging {
+  border-color: var(--accent-bright);
+  background: var(--accent-soft);
+}
+
+.missing-video__icon {
+  display: grid;
+  place-items: center;
+  width: 56px;
+  height: 56px;
+  margin-bottom: 4px;
+  border-radius: 50%;
+  background: var(--surface-2);
+  color: var(--text-muted);
+}
+
+.missing-video__title {
+  font-size: 19px;
+  font-weight: 650;
+  letter-spacing: -0.01em;
+}
+
+.missing-video__text {
+  max-width: 440px;
+  color: var(--text-muted);
+}
+
+.missing-video__file {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  max-width: min(440px, 100%);
+  margin: 6px 0 10px;
+  padding: 8px 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-m);
+  background: var(--surface-1);
+  color: var(--text-faint);
+  font-size: 12.5px;
+}
+
+.missing-video__file-name {
+  color: var(--text);
+  font-size: 13.5px;
+  font-weight: 550;
+  overflow-wrap: anywhere;
+}
+
+.missing-video__hint {
+  color: var(--text-faint);
+  font-size: 12.5px;
+}
+
+.missing-video .inline-error {
+  margin-top: 6px;
+  max-width: 440px;
+  text-align: left;
+}
+
+/* ---- Controls ------------------------------------------------------------ */
+
+.workspace__controls {
+  grid-area: controls;
+  position: relative;
+  z-index: 15;
+  border-top: 1px solid var(--border);
+  background: var(--surface-1);
+}
+
+/* ---- Narrow screens ------------------------------------------------------
+   Controls are regrouped rather than shrunk: the tools move under the video
+   as a horizontal strip, and the style options get their own row. */
+
+@media (max-width: 760px) {
+  .workspace {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto auto minmax(0, 1fr) auto auto;
+    grid-template-areas:
+      'topbar'
+      'banners'
+      'stage'
+      'rail'
+      'controls';
+  }
+
+  .topbar {
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+      'left right'
+      'center center';
+    row-gap: 0;
+    height: auto;
+    padding: 4px 8px 0;
+  }
+
+  .topbar__left {
+    grid-area: left;
+  }
+
+  .topbar__right {
+    grid-area: right;
+  }
+
+  .topbar__center {
+    grid-area: center;
+    display: flex;
+    justify-content: center;
+    padding: 4px 0 6px;
+    overflow-x: auto;
+  }
+
+  .save__label {
+    display: none;
+  }
+
+  .rail {
+    flex-direction: row;
+    justify-content: flex-start;
+    padding: 4px 8px;
+    border-right: 0;
+    border-top: 1px solid var(--border);
+    overflow-x: auto;
+  }
+
+  .rail__group {
+    flex-direction: row;
+  }
+
+  .rail__separator {
+    width: 1px;
+    height: 24px;
+  }
+
+  .rail__spacer {
+    min-width: 8px;
+  }
+
+  .banner--narrow-only {
+    display: flex;
+  }
+
+  .banner {
+    flex-wrap: wrap;
+  }
+}

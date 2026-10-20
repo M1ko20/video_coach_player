@@ -1,0 +1,41 @@
+:root {
+  color-scheme: dark;
+
+  /* Surfaces, darkest to lightest. The stage is darker than the UI so footage stands out. */
+  --stage: #050506;
+  --bg: #0c0d0f;
+  --surface-1: #131518;
+  --surface-2: #1a1d21;
+  --surface-3: #24282d;
+  --surface-4: #2f343a;
+  --border: #262a2f;
+  --border-strong: #383e45;
+
+  --text: #eceef1;
+  --text-muted: #a3aab3;
+  --text-faint: #717984;
+
+  /* One accent, used for the active tool, the playhead and focus. */
+  --accent: #3d84f7;
+  --accent-bright: #6ba6ff;
+  --accent-soft: rgba(61, 132, 247, 0.18);
+  --on-accent: #ffffff;
+
+  --danger: #ff5e55;
+  --danger-soft: rgba(255, 94, 85, 0.14);
+  --warning: #f2b544;
+  --warning-soft: rgba(242, 181, 68, 0.12);
+  --success: #45c98a;
+
+  --radius-s: 6px;
+  --radius-m: 8px;
+  --radius-l: 12px;
+
+  --control: 36px;
+  --topbar-height: 48px;
+  --rail-width: 52px;
+
+  --font: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --shadow-pop: 0 8px 28px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.04);
+  --ease: cubic-bezier(0.2, 0, 0, 1);
+}

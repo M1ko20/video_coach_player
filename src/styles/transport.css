@@ -1,0 +1,247 @@
+/* ---- Timeline ------------------------------------------------------------
+   The visible track is thin, but the whole 30px-tall strip is the click and
+   drag target, so seeking never needs a pixel-perfect aim. */
+
+.timeline {
+  display: flex;
+  align-items: center;
+  height: 30px;
+  padding: 0 16px;
+  cursor: pointer;
+  outline: none;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.timeline[aria-disabled='true'] {
+  cursor: default;
+  opacity: 0.5;
+}
+
+.timeline__track {
+  position: relative;
+  flex: 1;
+  height: 6px;
+}
+
+.timeline__bar {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  border-radius: 3px;
+  background: var(--surface-4);
+  transition: transform 0.12s var(--ease);
+}
+
+.timeline:hover:not([aria-disabled='true']) .timeline__bar,
+.timeline.is-scrubbing .timeline__bar {
+  transform: scaleY(1.34);
+}
+
+.timeline:focus-visible .timeline__bar {
+  outline: 2px solid var(--accent-bright);
+  outline-offset: 3px;
+}
+
+.timeline__fill {
+  position: absolute;
+  inset: 0;
+  background: var(--accent);
+  transform: scaleX(0);
+  transform-origin: left center;
+  will-change: transform;
+}
+
+/* Where each drawing was made. */
+.timeline__mark {
+  position: absolute;
+  top: -4px;
+  width: 2px;
+  height: 14px;
+  margin-left: -1px;
+  border-radius: 1px;
+  background: rgba(255, 255, 255, 0.82);
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.35);
+  pointer-events: none;
+}
+
+.timeline__mark.is-selected {
+  width: 3px;
+  margin-left: -1.5px;
+  background: #ffd60a;
+}
+
+/* Zero-size anchor moved with a transform; the knob itself is the pseudo-element. */
+.timeline__thumb {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  width: 0;
+  height: 0;
+  will-change: transform;
+  pointer-events: none;
+}
+
+.timeline__thumb::after {
+  content: '';
+  position: absolute;
+  top: -7px;
+  left: -7px;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #ffffff;
+  box-shadow:
+    0 0 0 1px rgba(0, 0, 0, 0.25),
+    0 1px 4px rgba(0, 0, 0, 0.5);
+  transition: transform 0.12s var(--ease);
+}
+
+.timeline:hover:not([aria-disabled='true']) .timeline__thumb::after {
+  transform: scale(1.12);
+}
+
+.timeline.is-scrubbing .timeline__thumb::after {
+  transform: scale(1.3);
+  box-shadow:
+    0 0 0 5px var(--accent-soft),
+    0 1px 4px rgba(0, 0, 0, 0.5);
+}
+
+.timeline__hover {
+  position: absolute;
+  top: -5px;
+  bottom: -5px;
+  left: 0;
+  width: 1px;
+  margin-left: -0.5px;
+  background: rgba(255, 255, 255, 0.55);
+  opacity: 0;
+  pointer-events: none;
+}
+
+.timeline__hover[data-visible='true'] {
+  opacity: 1;
+}
+
+.timeline__hover-label {
+  position: absolute;
+  bottom: calc(100% + 7px);
+  left: 0;
+  padding: 3px 7px;
+  border-radius: 5px;
+  background: #f1f2f4;
+  color: #15171a;
+  font-size: 11.5px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.45);
+}
+
+/* ---- Transport ----------------------------------------------------------- */
+
+.transport {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: center;
+  gap: 12px;
+  padding: 2px 12px 10px;
+}
+
+.transport__left,
+.transport__right,
+.transport__center {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.transport__right {
+  justify-content: flex-end;
+}
+
+.transport__center {
+  gap: 10px;
+}
+
+.transport__play {
+  width: 44px;
+  height: 44px;
+}
+
+.readout {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  padding-left: 4px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.readout__time {
+  font-size: 15px;
+  font-weight: 650;
+  letter-spacing: 0.01em;
+}
+
+.readout__duration {
+  color: var(--text-faint);
+  font-weight: 500;
+}
+
+.readout__frame {
+  color: var(--text-faint);
+  font-size: 12.5px;
+}
+
+.readout__frame span {
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+.fps {
+  position: relative;
+}
+
+@media (max-width: 760px) {
+  .transport {
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+      'left center'
+      'right right';
+    row-gap: 6px;
+    padding: 0 8px 8px;
+  }
+
+  .transport__left {
+    grid-area: left;
+  }
+
+  .transport__center {
+    grid-area: center;
+    gap: 6px;
+  }
+
+  .transport__right {
+    grid-area: right;
+    justify-content: space-between;
+    overflow-x: auto;
+  }
+
+  .readout {
+    flex-direction: column;
+    gap: 0;
+  }
+
+  .readout__time {
+    font-size: 14px;
+  }
+
+  .timeline {
+    height: 34px;
+    padding: 0 14px;
+  }
+}

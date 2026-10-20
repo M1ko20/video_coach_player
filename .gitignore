@@ -1,0 +1,8 @@
+node_modules
+dist
+test-results
+playwright-report
+tests/fixtures/*.mp4
+tests/fixtures/*.webm
+.DS_Store
+*.local
